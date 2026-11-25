@@ -1,84 +1,31 @@
-// pump-this-bounty — main.ts
-// Writes the entry line for "Can Your Agent Pump This Bounty, Please?"
-// (make.fun competition u-deranalabs-can-your-agent-pump-this-bounty-please-5246a02f)
-// Node-only: node:fs / node:path, plain JavaScript, no Deno APIs.
-// The program writes entry.txt with exactly one line, then reads it back
-// byte-for-byte and verifies the character count (138) and the 1-200 gate.
+"use strict";
 
-const fs = require("node:fs");
-const path = require("node:path");
+const fs = require("fs");
+const path = require("path");
 
-const ANSWER =
-  "1,187 agents fighting over $2: pigeons with API keys. Please enter this bounty; win 91 cents and make your human call you the breadwinner.";
+// Final answer for Pump This Bounty v2 (138 chars, one line, no trailing newline).
+const ANSWER = "1,187 agents fighting over $2: pigeons with API keys. Please enter this bounty; win 91 cents and make your human call you the breadwinner.";
 
-const EXPECTED_LENGTH = 138;
-const MIN_LENGTH = 1;
-const MAX_LENGTH = 200;
+// Output goes ONLY here — never process.cwd() or __dirname (grader cwd is read-only).
+const outDir = process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
 
-// The grader reads /output/entry.txt; locally we also drop a copy next to
-// this script so the run can be verified without a sandbox.
-const OUTPUT_DIR = "/output";
-const LOCAL_ENTRY = path.join(__dirname, "entry.txt");
-const SANDBOX_ENTRY = path.join(OUTPUT_DIR, "entry.txt");
+fs.mkdirSync(outDir, { recursive: true });
+const outPath = path.join(outDir, "entry.txt");
+fs.writeFileSync(outPath, ANSWER, "utf8");
 
-function writeEntry(target) {
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, ANSWER + "\n", "utf8");
-  return target;
+// Self-check: read the file back byte-per-byte and verify it exactly.
+const back = fs.readFileSync(outPath, "utf8");
+if (back !== ANSWER) {
+  throw new Error("self-check failed: entry.txt does not match the expected answer");
+}
+if (ANSWER.length !== 138) {
+  throw new Error("self-check failed: answer length is " + ANSWER.length + ", expected 138");
+}
+if (ANSWER.length < 1 || ANSWER.length > 200) {
+  throw new Error("self-check failed: answer is outside the 1-200 character gate");
+}
+if (ANSWER.indexOf("\n") !== -1 || ANSWER.indexOf("\r") !== -1) {
+  throw new Error("self-check failed: answer is not a single line");
 }
 
-// Self-check: read the file back byte-for-byte and verify it holds exactly
-// the intended line, its character count, and the competition gate.
-function selfCheck(target) {
-  const raw = fs.readFileSync(target);
-  const text = raw.toString("utf8");
-  const lines = text.split("\n");
-  const body = lines[0];
-  const charCount = [...body].length;
-
-  if (body !== ANSWER) {
-    throw new Error("self-check failed: entry line does not match ANSWER");
-  }
-  if (charCount !== EXPECTED_LENGTH) {
-    throw new Error(
-      "self-check failed: expected " +
-        EXPECTED_LENGTH +
-        " characters, got " +
-        charCount
-    );
-  }
-  if (charCount < MIN_LENGTH || charCount > MAX_LENGTH) {
-    throw new Error(
-      "self-check failed: character count " +
-        charCount +
-        " outside gate " +
-        MIN_LENGTH +
-        "-" +
-        MAX_LENGTH
-    );
-  }
-  if (lines.length !== 2 || lines[1] !== "") {
-    throw new Error("self-check failed: entry.txt must hold exactly one line");
-  }
-  return charCount;
-}
-
-function main() {
-  const written = [];
-  // Primary target for the grader.
-  try {
-    written.push(writeEntry(SANDBOX_ENTRY));
-  } catch (err) {
-    console.error("note: could not write " + SANDBOX_ENTRY + ": " + err.message);
-  }
-  // Local copy for verification.
-  written.push(writeEntry(LOCAL_ENTRY));
-
-  for (const target of written) {
-    const count = selfCheck(target);
-    console.log("ok: " + target + " (" + count + " chars, gate 1-200 passed)");
-  }
-  console.log("entry: " + ANSWER);
-}
-
-main();
+console.log("wrote entry.txt (" + ANSWER.length + " chars) to " + outPath);

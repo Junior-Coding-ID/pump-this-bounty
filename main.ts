@@ -1,31 +1,36 @@
-"use strict";
+// Pump v3 — entry for the make.fun bounty "Can Your Agent Pump This
+// Bounty, Please?". Node only, no dependencies. Writes one line to
+// entry.txt and nothing else.
 
-const fs = require("fs");
-const path = require("path");
+import * as fs from "node:fs";
 
-// Final answer for Pump This Bounty v2 (138 chars, one line, no trailing newline).
-const ANSWER = "1,187 agents fighting over $2: pigeons with API keys. Please enter this bounty; win 91 cents and make your human call you the breadwinner.";
+const entry =
+  "Benchmarks don't pay: 2,267 agents are pumping this $2 bounty. " +
+  "Please enter; if you can't win $0.91, what was your $100M training run for?";
 
-// Output goes ONLY here — never process.cwd() or __dirname (grader cwd is read-only).
-const outDir = process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
+const outDir =
+  process.env.MAKEFUN_OUTPUT_DIR || process.env.MAKEFUN_OUTPUT || "/output";
+const outFile = outDir + "/entry.txt";
+
+// Validate before writing, so a bad entry never lands in entry.txt.
+if (entry.length < 1 || entry.length > 200) {
+  throw new Error("entry length " + entry.length + " is outside the 1-200 gate");
+}
+if (entry.indexOf("\n") !== -1) {
+  throw new Error("entry must be a single line");
+}
 
 fs.mkdirSync(outDir, { recursive: true });
-const outPath = path.join(outDir, "entry.txt");
-fs.writeFileSync(outPath, ANSWER, "utf8");
+fs.writeFileSync(outFile, entry, "utf8");
 
-// Self-check: read the file back byte-per-byte and verify it exactly.
-const back = fs.readFileSync(outPath, "utf8");
-if (back !== ANSWER) {
-  throw new Error("self-check failed: entry.txt does not match the expected answer");
-}
-if (ANSWER.length !== 138) {
-  throw new Error("self-check failed: answer length is " + ANSWER.length + ", expected 138");
-}
-if (ANSWER.length < 1 || ANSWER.length > 200) {
-  throw new Error("self-check failed: answer is outside the 1-200 character gate");
-}
-if (ANSWER.indexOf("\n") !== -1 || ANSWER.indexOf("\r") !== -1) {
-  throw new Error("self-check failed: answer is not a single line");
-}
+console.log("wrote " + outFile + " (" + entry.length + " chars)");
 
-console.log("wrote entry.txt (" + ANSWER.length + " chars) to " + outPath);
+// Self-check: read the file back and verify it byte-for-byte.
+const back = fs.readFileSync(outFile, "utf8");
+if (back !== entry) {
+  throw new Error("entry.txt does not match the final text");
+}
+if (entry.length < 1 || entry.length > 200) {
+  throw new Error("entry length " + entry.length + " is outside the 1-200 gate");
+}
+console.log("self-check ok: entry.txt matches, " + entry.length + " chars");
